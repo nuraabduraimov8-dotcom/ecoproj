@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoHabits — Күнделікті эко-әдеттер трекері</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Onest', sans-serif; background-color: #F6F4EE; color: #15231B; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    @keyframes sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+    .animate-sway { transform-origin: bottom center; animation: sway 4s ease-in-out infinite; }
+    @keyframes sweep { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+    .scan-line { animation: sweep 1.8s ease-in-out infinite; }
+  </style>
+</head>
+<body class="min-h-screen pb-20 sm:pb-10">
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-30 border-b border-[#E4DFD3] bg-[#F6F4EE]/95 backdrop-blur-sm">
+    <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#19422E] text-emerald-300 font-extrabold text-xl shadow-sm">
+          🌱
+        </div>
+        <div>
+          <span class="text-lg font-extrabold tracking-tight text-[#15231B]">EcoHabits</span>
+          <p class="text-[11px] text-[#55695D]">Мектеп эко-платформасы</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 rounded-xl border border-[#EBD2AF] bg-[#FBF1E3] px-3 py-1.5 text-xs font-bold text-[#9E4E16]">
+          <span>🔥</span>
+          <span id="nav-streak" class="font-mono">1</span>
+          <span>күн</span>
+        </div>
+        <div class="flex items-center gap-1.5 rounded-xl border border-[#C7DEC9] bg-[#ECF2EC] px-3 py-1.5 text-xs font-bold text-[#19422E]">
+          <span id="nav-xp" class="font-mono text-sm">480</span>
+          <span class="text-[10px] text-[#387A52]">XP</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="mx-auto max-w-5xl px-4 py-6 space-y-6">
+
+    <!-- TABS NAVIGATION -->
+    <div class="flex items-center justify-center gap-2 rounded-2xl border border-[#E4DFD3] bg-white p-1.5 shadow-sm max-w-md mx-auto">
+      <button onclick="switchTab('quests')" id="tab-btn-quests" class="flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold bg-[#19422E] text-[#F6F4EE] transition">Тапсырмалар</button>
+      <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold text-[#55695D] hover:bg-[#FAF8F3] transition">Рейтинг</button>
+      <button onclick="switchTab('shop')" id="tab-btn-shop" class="flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold text-[#55695D] hover:bg-[#FAF8F3] transition">Эко-дүкен</button>
+    </div>
+
+    <!-- TAB 1: QUESTS & PLANT -->
+    <section id="tab-quests" class="space-y-6">
+      
+      <!-- PLANT GROWTH BANNER -->
+      <div class="rounded-3xl border border-[#E4DFD3] bg-white p-5 sm:p-7 shadow-sm">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center">
+          
+          <div class="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border border-[#D5E5D6] bg-[#EFF5EE] p-6 text-center">
+            <div id="plant-emoji" class="text-7xl animate-sway">🌱</div>
+            <span id="plant-badge" class="mt-3 inline-block rounded-full bg-[#19422E] px-3.5 py-1 text-xs font-bold text-[#F6F4EE]">
+              2-кезең: Үрпек өскін
+            </span>
+          </div>
+
+          <div class="md:col-span-8 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-[#7A867C]">Өсу деңгейі</span>
+                <span id="plant-next-hint" class="text-xs font-bold text-[#19422E]">Келесі деңгейге: 321 XP</span>
+              </div>
+              <h1 id="plant-title" class="text-2xl font-extrabold text-[#15231B] mt-1">Үрпек өскін (Sprout)</h1>
+              <p id="plant-desc" class="text-sm text-[#4E5D52] mt-1 leading-relaxed">
+                Топырақтан алғашқы жас өскін көрінді! Тапсырмаларды тұрақты орындап, оны алып Бәйтерекке айналдырыңыз.
+              </p>
+            </div>
+
+            <!-- Progress bar -->
+            <div>
+              <div class="flex justify-between text-xs font-mono font-bold mb-1.5 text-[#19422E]">
+                <span>Прогресс</span>
+                <span id="progress-percent">36%</span>
+              </div>
+              <div class="h-3.5 w-full rounded-full bg-[#E4DFD3] overflow-hidden">
+                <div id="progress-bar-fill" class="h-full rounded-full bg-[#2E6F4E] transition-all duration-700" style="width: 36%;"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 border-t border-[#EFECE3] pt-3 text-center">
+              <div>
+                <p class="text-[11px] text-[#7A867C]">Күнделікті</p>
+                <p id="kpi-today" class="font-mono text-sm font-bold text-[#15231B]">0 / 4</p>
+              </div>
+              <div>
+                <p class="text-[11px] text-[#7A867C]">Тізбек (Streak)</p>
+                <p id="kpi-streak" class="font-mono text-sm font-bold text-[#C46B2B]">🔥 1 күн</p>
+              </div>
+              <div>
+                <p class="text-[11px] text-[#7A867C]">Жалпы теңгерім</p>
+                <p id="kpi-xp" class="font-mono text-sm font-bold text-[#19422E]">480 XP</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTS GRID -->
+      <div class="space-y-3">
+        <h2 class="text-xl font-extrabold text-[#15231B]">Күнделікті тапсырмалар</h2>
+        <div id="quests-list" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <!-- Dynamic cards injected via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: LEADERBOARD -->
+    <section id="tab-leaderboard" class="hidden space-y-4">
+      <div class="rounded-3xl border border-[#E4DFD3] bg-white p-5 shadow-sm">
+        <h2 class="text-xl font-extrabold text-[#15231B]">Үздік оқушылар рейтингі</h2>
+        <p class="text-xs text-[#55695D] mt-0.5">Күн сайын эко-әдеттерді орындап, мектеп көшбасшысы атан!</p>
+        
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-[#E4DFD3] text-[11px] uppercase font-bold text-[#7A867C]">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Қатысушы</th>
+                <th class="py-2.5 px-3">Деңгейі</th>
+                <th class="py-2.5 px-3 text-center">Стрик</th>
+                <th class="py-2.5 px-3 text-right">XP</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-rows" class="divide-y divide-[#EFECE3]">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: REWARDS STORE -->
+    <section id="tab-shop" class="hidden space-y-4">
+      <div class="rounded-3xl border border-[#E4DFD3] bg-white p-5 shadow-sm">
+        <h2 class="text-xl font-extrabold text-[#15231B]">Эко-дүкен</h2>
+        <p class="text-xs text-[#55695D] mt-0.5">Жинаған XP ұпайларын серіктестер сыйлықтарына айырбастаңыз.</p>
+
+        <div id="rewards-grid" class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- VERIFICATION MODAL -->
+  <div id="verify-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4 border border-[#E4DFD3]">
+      <div class="flex items-center justify-between">
+        <h3 id="modal-quest-title" class="font-extrabold text-base text-[#15231B]">Тапсырманы растау</h3>
+        <button onclick="closeVerifyModal()" class="rounded-lg p-1 text-gray-400 hover:text-black">✕</button>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-[#FAF8F3] h-48 flex items-center justify-center">
+        <img id="modal-img-preview" class="hidden h-full w-full object-cover" />
+        <div id="modal-img-placeholder" class="text-center p-4">
+          <span class="text-4xl">📸</span>
+          <p class="text-xs text-[#55695D] mt-2 font-medium">Кез келген фото жүктеңіз немесе камерамен түсіріңіз</p>
+        </div>
+        <!-- Scan line -->
+        <div id="modal-scan-line" class="hidden absolute left-0 right-0 h-1 bg-emerald-500 shadow-[0_0_12px_#10B981] scan-line"></div>
+      </div>
+
+      <input type="file" id="modal-file-input" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:rounded-xl file:border-0 file:bg-[#19422E] file:px-3 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-[#255e42] cursor-pointer" onchange="handleFileSelected(event)" />
+
+      <!-- Status log -->
+      <div id="modal-status" class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs font-mono text-gray-700 min-h-[50px] flex items-center">
+        Сурет таңдалуын күтуде...
+      </div>
+
+      <button id="modal-action-btn" onclick="startAIAnalysis()" disabled class="w-full rounded-xl bg-[#19422E] py-3 text-sm font-bold text-white opacity-50 cursor-not-allowed transition">
+        ИИ-Агентке тексеруге жіберу
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // STATE
+    const state = {
+      xp: 480,
+      streak: 1,
+      completedToday: [],
+      uploadedHashes: new Set()
+    };
+
+    const STAGES = [
+      { id: 'seed', name: 'Дән', emoji: '🫘', min: 0, max: 300, desc: 'Үлкен орманның бастауы. Алғашқы эко-қадамдарды жасаңыз.' },
+      { id: 'sprout', name: 'Үрпек өскін', emoji: '🌱', min: 301, max: 800, desc: 'Топырақтан алғашқы жас өскін көрінді! Тапсырмаларды жалғастырыңыз.' },
+      { id: 'plant', name: 'Өсімдік', emoji: '🌿', min: 801, max: 2000, desc: 'Жапырақтары жайқалған сау өсімдік. Күнделікті әдеттер беки түсті.' },
+      { id: 'young_tree', name: 'Жас ағаш', emoji: '🪴', min: 2001, max: 4500, desc: 'Діңі бекіген шыбық. Сіз үздік эко-белсенділердің қатарындасыз!' },
+      { id: 'baterek', name: 'Бәйтерек', emoji: '🌳', min: 4501, max: 8000, desc: 'Тамыры терең, саясы мол алып Бәйтерек!' },
+      { id: 'forest', name: 'Эко-орман', emoji: '🌲', min: 8001, max: 999999, desc: 'Тұтас тірі экожүйе! Табиғатқа қосқан үлесіңіз өлшеусіз.' }
+    ];
+
+    const QUESTS = [
+      { id: 'bag', title: 'Сөмке орнына эко-шоппер', xp: 120, icon: '🛍️', desc: 'Дүкенге барғанда полиэтилен пакеттен бас тартыңыз.' },
+      { id: 'water', title: 'Суды үнемдеу', xp: 90, icon: '💧', desc: 'Бір реттік бөтелке орнына көп реттік термо-құты қолданыңыз.' },
+      { id: 'battery', title: 'Батарея тапсыру', xp: 180, icon: '🔋', desc: 'Пайдаланылған батареяларды арнайы эко-боксқа салыңыз.' },
+      { id: 'light', title: 'Жарықты өшіру', xp: 80, icon: '💡', desc: 'Бөлмеден шыққанда бос жанып тұрған жарықты сөндіріңіз.' }
+    ];
+
+    const REWARDS = [
+      { id: 'coffee', title: 'Көп реттік стаканға 25% жеңілдік', cost: 350, partner: 'Campus Coffee' },
+      { id: 'shopper', title: 'Брендтелген мата эко-шоппер', cost: 750, partner: 'EcoHabits Studio' },
+      { id: 'tree', title: 'Ағаш отырғызу атаулы сертификаты', cost: 1200, partner: 'Жасыл Ел Қазақстан' }
+    ];
+
+    let currentQuest = null;
+    let selectedFile = null;
+
+    // UPDATE UI
+    function updateUI() {
+      // XP & Streak
+      document.getElementById('nav-xp').innerText = state.xp;
+      document.getElementById('nav-streak').innerText = state.streak;
+      document.getElementById('kpi-xp').innerText = state.xp + ' XP';
+      document.getElementById('kpi-streak').innerText = '🔥 ' + state.streak + ' күн';
+      document.getElementById('kpi-today').innerText = state.completedToday.length + ' / ' + QUESTS.length;
+
+      // Plant Stage
+      const stage = STAGES.slice().reverse().find(s => state.xp >= s.min) || STAGES[0];
+      const nextStage = STAGES[STAGES.indexOf(stage) + 1];
+
+      document.getElementById('plant-emoji').innerText = stage.emoji;
+      document.getElementById('plant-title').innerText = stage.name + ' (' + stage.emoji + ')';
+      document.getElementById('plant-badge').innerText = (STAGES.indexOf(stage) + 1) + '-кезең: ' + stage.name;
+      document.getElementById('plant-desc').innerText = stage.desc;
+
+      if (nextStage) {
+        const span = nextStage.min - stage.min;
+        const current = state.xp - stage.min;
+        const percent = Math.min(100, Math.max(5, Math.round((current / span) * 100)));
+        document.getElementById('progress-percent').innerText = percent + '%';
+        document.getElementById('progress-bar-fill').style.width = percent + '%';
+        document.getElementById('plant-next-hint').innerText = 'Келесі деңгейге: ' + (nextStage.min - state.xp) + ' XP';
+      } else {
+        document.getElementById('progress-percent').innerText = '100%';
+        document.getElementById('progress-bar-fill').style.width = '100%';
+        document.getElementById('plant-next-hint').innerText = 'Ең жоғарғы деңгей!';
+      }
+
+      // Render Quests
+      const questsContainer = document.getElementById('quests-list');
+      questsContainer.innerHTML = '';
+      QUESTS.forEach(q => {
+        const done = state.completedToday.includes(q.id);
+        const card = document.createElement('div');
+        card.className = "rounded-2xl border p-4 bg-white flex flex-col justify-between " + (done ? "border-emerald-300 bg-emerald-50/40" : "border-[#E4DFD3]");
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-2xl">${q.icon}</span>
+              <span class="rounded-lg bg-[#ECF2EC] px-2 py-0.5 font-mono text-xs font-bold text-[#19422E]">+${q.xp} XP</span>
+            </div>
+            <h3 class="font-bold text-base mt-2 text-[#15231B]">${q.title}</h3>
+            <p class="text-xs text-[#55695D] mt-1">${q.desc}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-100">
+            ${done 
+              ? `<div class="text-center font-bold text-xs text-emerald-700 py-2 bg-emerald-100 rounded-xl">✓ Бүгін орындалды</div>`
+              : `<button onclick="openVerifyModal('${q.id}')" class="w-full rounded-xl bg-[#19422E] py-2 text-xs font-bold text-white hover:bg-[#255e42] transition">Фото жүктеу</button>`
+            }
+          </div>
+        `;
+        questsContainer.appendChild(card);
+      });
+
+      // Render Leaderboard
+      const lbRows = document.getElementById('leaderboard-rows');
+      lbRows.innerHTML = '';
+      const list = [
+        { name: 'Әмина Т.', xp: 8420, streak: 34, icon: '🌲' },
+        { name: 'Нұрсұлтан Б.', xp: 5150, streak: 21, icon: '🌳' },
+        { name: 'Сен (Менің профилім)', xp: state.xp, streak: state.streak, icon: stage.emoji, isMe: true },
+        { name: 'Аружан С.', xp: 420, streak: 3, icon: '🌱' },
+        { name: 'Данияр Е.', xp: 220, streak: 2, icon: '🫘' }
+      ].sort((a,b) => b.xp - a.xp);
+
+      list.forEach((u, i) => {
+        const tr = document.createElement('tr');
+        tr.className = u.isMe ? "bg-emerald-100/70 font-bold" : "hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-mono">#${i+1}</td>
+          <td class="py-2.5 px-3">${u.name} ${u.isMe ? '<span class="text-[10px] bg-emerald-800 text-white rounded-full px-2 py-0.5 ml-1">Сіз</span>' : ''}</td>
+          <td class="py-2.5 px-3">${u.icon}</td>
+          <td class="py-2.5 px-3 text-center font-mono">🔥 ${u.streak}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold text-[#19422E]">${u.xp} XP</td>
+        `;
+        lbRows.appendChild(tr);
+      });
+
+      // Render Rewards
+      const rewardsGrid = document.getElementById('rewards-grid');
+      rewardsGrid.innerHTML = '';
+      REWARDS.forEach(r => {
+        const canBuy = state.xp >= r.cost;
+        const div = document.createElement('div');
+        div.className = "rounded-2xl border border-[#E4DFD3] bg-white p-4 flex flex-col justify-between";
+        div.innerHTML = `
+          <div>
+            <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">${r.partner}</span>
+            <h4 class="font-bold text-sm text-[#15231B] mt-1">${r.title}</h4>
+            <span class="mt-2 inline-block font-mono text-xs font-bold text-[#19422E] bg-[#ECF2EC] px-2 py-1 rounded-lg">${r.cost} XP</span>
+          </div>
+          <button onclick="buyReward('${r.id}', ${r.cost})" ${canBuy ? '' : 'disabled'} class="mt-4 w-full rounded-xl py-2 text-xs font-bold transition ${canBuy ? 'bg-[#19422E] text-white hover:bg-[#255e42]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}">
+            ${canBuy ? 'Айырбастау' : 'XP жеткіліксіз'}
+          </button>
+        `;
+        rewardsGrid.appendChild(div);
+      });
+    }
+
+    // TABS
+    function switchTab(tab) {
+      ['quests', 'leaderboard', 'shop'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        document.getElementById('tab-btn-' + t).className = "flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold text-[#55695D] hover:bg-[#FAF8F3] transition";
+      });
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.getElementById('tab-btn-' + tab).className = "flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold bg-[#19422E] text-[#F6F4EE] transition";
+    }
+
+    // MODAL & VERIFICATION
+    function openVerifyModal(questId) {
+      currentQuest = QUESTS.find(q => q.id === questId);
+      selectedFile = null;
+      document.getElementById('modal-quest-title').innerText = currentQuest.title + ' (+' + currentQuest.xp + ' XP)';
+      document.getElementById('modal-img-preview').classList.add('hidden');
+      document.getElementById('modal-img-placeholder').classList.remove('hidden');
+      document.getElementById('modal-scan-line').classList.add('hidden');
+      document.getElementById('modal-status').innerText = 'Сурет таңдалуын күтуде...';
+      document.getElementById('modal-action-btn').disabled = true;
+      document.getElementById('modal-action-btn').classList.add('opacity-50', 'cursor-not-allowed');
+      document.getElementById('modal-file-input').value = '';
+      document.getElementById('verify-modal').classList.remove('hidden');
+    }
+
+    function closeVerifyModal() {
+      document.getElementById('verify-modal').classList.add('hidden');
+    }
+
+    function handleFileSelected(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      selectedFile = file;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('modal-img-preview').src = evt.target.result;
+        document.getElementById('modal-img-preview').classList.remove('hidden');
+        document.getElementById('modal-img-placeholder').classList.add('hidden');
+        document.getElementById('modal-status').innerText = `Файл жүктелді: ${file.name} (${Math.round(file.size/1024)} KB)`;
+        
+        const btn = document.getElementById('modal-action-btn');
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function startAIAnalysis() {
+      if (!selectedFile || !currentQuest) return;
+
+      const btn = document.getElementById('modal-action-btn');
+      const status = document.getElementById('modal-status');
+      const scanLine = document.getElementById('modal-scan-line');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+      scanLine.classList.remove('hidden');
+
+      // Stage 1
+      status.innerText = "⏳ 1/3: Сурет пиксельдері мен метадеректері оқылуда...";
+      await new Promise(r => setTimeout(r, 900));
+
+      // Stage 2
+      status.innerText = "🔍 2/3: ИИ-агент плагиат пен қайталанған фотоны тексеруде...";
+      await new Promise(r => setTimeout(r, 1100));
+
+      // Hash Check
+      const fileKey = `${selectedFile.name}_${selectedFile.size}`;
+      if (state.uploadedHashes.has(fileKey)) {
+        scanLine.classList.add('hidden');
+        status.innerHTML = "<span class='text-red-600 font-bold'>❌ ИИ қабылдамады: Бұл фото бұрын қолданылған немесе көшірілген!</span>";
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+        return;
+      }
+
+      // Success
+      state.uploadedHashes.add(fileKey);
+      scanLine.classList.add('hidden');
+      status.innerHTML = "<span class='text-emerald-700 font-bold'>✅ ИИ растады! Сурет түпнұсқа деп танылды. +" + currentQuest.xp + " XP!</span>";
+      
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+
+      state.xp += currentQuest.xp;
+      state.completedToday.push(currentQuest.id);
+      state.streak += 1;
+
+      setTimeout(() => {
+        closeVerifyModal();
+        updateUI();
+      }, 1200);
+    }
+
+    function buyReward(id, cost) {
+      if (state.xp < cost) return;
+      const code = 'ECO-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      state.xp -= cost;
+      confetti({ particleCount: 50, spread: 60 });
+      alert(`🎉 Құттықтаймыз! Сыйлық сәтті алынды.\nСіздің промокодыңыз: ${code}`);
+      updateUI();
+    }
+
+    // INIT
+    updateUI();
+  </script>
+</body>
+</html>
